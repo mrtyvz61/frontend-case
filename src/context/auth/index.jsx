@@ -39,16 +39,11 @@ export const AuthProvider = ({ children }) => {
 	const [user, setUser] = useLocalStorage('user', null);
 	const navigate = useNavigate();
 
-	const [state, dispatch] = React.useReducer(authReducer, initialState, () => {
-		const localData = localStorage.getItem('user');
-		return localData ? JSON.parse(localData) : initialState;
-	});
+	const [state, dispatch] = React.useReducer(authReducer, initialState);
 
 	useEffect(() => {
-		debugger;
-		console.log('user', user);
 		// set user in context state from local storage on app load
-		dispatch({ type: AUTH_ACTION_TYPES.SET_USER, payload: user });
+		if (user) dispatch({ type: AUTH_ACTION_TYPES.SET_USER, payload: user });
 	}, [user]); // run this effect only when user state changes
 
 	/**
@@ -58,15 +53,15 @@ export const AuthProvider = ({ children }) => {
 		const response = await onLoginHandler(email, password);
 		const { token, err } = response;
 		debugger;
-		if (rememberMe) {
-			setUser(token);
-		}
 		// if there is an error, return the error
 		if (err) {
 			notify(err, toastifyTypes.error);
 			return;
 		}
 		if (token) {
+			if (rememberMe) {
+				setUser(token);
+			}
 			// if there is no error, and token is present
 			dispatch({ type: AUTH_ACTION_TYPES.SET_USER, payload: token });
 			// navigate to country list page after login is successful
@@ -75,9 +70,10 @@ export const AuthProvider = ({ children }) => {
 	};
 
 	const logout = () => {
-		debugger;
 		// remove the user from the local storage
 		setUser(null);
+		// set the user in the state to null
+		dispatch({ type: AUTH_ACTION_TYPES.SET_USER, payload: null });
 		// navigate to login page after logout
 		navigate('/', { replace: true });
 	};
